@@ -37,7 +37,7 @@ A simple video conferencing application with WebRTC and Socket.IO.
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/simplemeet.git
+git clone https://github.com/bsyilmaz/simplemeet.git
 cd simplemeet
 ```
 
@@ -103,4 +103,4 @@ npm run dev
 
 ## License
 
-MIT 
+MIT
