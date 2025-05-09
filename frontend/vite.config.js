@@ -6,7 +6,11 @@ import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: [],
+      },
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
@@ -41,21 +45,40 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      'buffer': 'buffer/',
-      'events': 'events/',
-      'stream': 'stream-browserify',
-      'util': 'util/'
+      stream: 'stream-browserify',
+      util: 'util',
+      buffer: 'buffer',
+      events: 'events',
     }
   },
   define: {
     'process.env': {},
-    global: {}
+    global: 'window'
   },
   optimizeDeps: {
+    include: ['buffer', 'process'],
     esbuildOptions: {
       define: {
         global: 'globalThis'
       }
     }
-  }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          webrtc: ['simple-peer', 'socket.io-client'],
+        },
+      },
+    },
+    sourcemap: true,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+  },
+  server: {
+    host: true,
+    port: 5173,
+  },
 })

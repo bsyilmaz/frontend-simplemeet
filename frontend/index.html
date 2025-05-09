@@ -6,40 +6,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SimpleMeet v1.0.1</title>
     <!-- Versiyon bilgisi: v1.0.1 (WebRTC Fix) - Son güncelleme: 09.05.2023 -->
-    <!-- Inline script to fix WebRTC issues -->
+    <!-- Enhanced WebRTC polyfill -->
     <script>
-      // Fix for "Secure random number generation is not supported" error
-      if (typeof window !== 'undefined') {
-        // Provide a fake crypto implementation if needed
-        if (!window.crypto) {
-          window.crypto = {};
-        }
+      // Enhanced fix for "Secure random number generation is not supported" error
+      (function() {
+        console.log('Applying enhanced WebRTC polyfills...');
         
-        if (!window.crypto.getRandomValues) {
-          window.crypto.getRandomValues = function(array) {
-            for (let i = 0; i < array.length; i++) {
-              array[i] = Math.floor(Math.random() * 256);
-            }
-            return array;
-          };
-        }
-        
-        // Try to replace randombytes function that simple-peer uses
-        window.randomBytes = function(size, cb) {
-          const bytes = new Uint8Array(size);
-          window.crypto.getRandomValues(bytes);
-          
-          if (cb) {
-            setTimeout(() => {
-              cb(null, bytes);
-            }, 0);
+        // Ensure window.crypto exists
+        if (typeof window !== 'undefined') {
+          // For IE 11
+          if (!window.crypto && window.msCrypto) {
+            console.log('Using msCrypto as crypto');
+            window.crypto = window.msCrypto;
           }
           
-          return bytes;
-        };
-        
-        console.log('WebRTC polyfill applied in index.html');
-      }
+          // Create crypto if it doesn't exist
+          if (!window.crypto) {
+            console.log('Creating window.crypto');
+            window.crypto = {};
+          }
+          
+          // Implement getRandomValues if it doesn't exist
+          if (!window.crypto.getRandomValues) {
+            console.log('Implementing getRandomValues');
+            window.crypto.getRandomValues = function(array) {
+              for (let i = 0; i < array.length; i++) {
+                array[i] = Math.floor(Math.random() * 256);
+              }
+              return array;
+            };
+          }
+          
+          // Direct replacement for randombytes used by simple-peer
+          window.randomBytes = function(size, cb) {
+            console.log('Using randomBytes polyfill, size:', size);
+            const bytes = new Uint8Array(size);
+            window.crypto.getRandomValues(bytes);
+            
+            if (cb) {
+              setTimeout(() => {
+                cb(null, bytes);
+              }, 0);
+            }
+            
+            return bytes;
+          };
+          
+          // Test the polyfill
+          try {
+            const testArray = new Uint8Array(10);
+            window.crypto.getRandomValues(testArray);
+            console.log('WebRTC polyfill test successful:', testArray);
+          } catch (err) {
+            console.error('WebRTC polyfill test failed:', err);
+          }
+          
+          console.log('WebRTC polyfills applied in index.html');
+        }
+      })();
     </script>
     <style>
       .version-info {

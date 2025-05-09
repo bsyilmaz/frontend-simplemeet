@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 import { socket } from '../services/socket';
-import { setupWebRTCListeners } from '../services/webrtc';
+import { setupWebRTCListeners } from '../services/webrtcWrapper';
 import Video from './Video';
 import Controls from './Controls';
 
@@ -100,9 +100,6 @@ const Room = () => {
   
   // Create list of all streams
   const renderParticipants = () => {
-    console.log('Rendering participants. Users:', users);
-    console.log('Peers:', peers);
-    
     // First render local stream
     const videos = [
       <div key="local-video" className="w-full md:w-1/2 lg:w-1/3 p-2">
@@ -129,47 +126,42 @@ const Room = () => {
       );
     }
     
-    // Render all remote users
-    users.forEach(user => {
-      // Skip self
-      if (user.id === socket.id) return;
+    // Map all connected peers and their streams
+    Object.keys(peers).forEach(peerId => {
+      const peer = peers[peerId];
+      // Find user info
+      const user = users.find(u => u.id === peerId);
       
-      // Get peer for this user
-      const peer = peers[user.id];
-      let remoteStream = null;
-      
-      // Try to get stream from peer or user object
-      if (peer && peer.remoteStream) {
-        remoteStream = peer.remoteStream;
-      } else if (user.stream) {
-        remoteStream = user.stream;
-      }
-      
-      if (remoteStream) {
-        videos.push(
-          <div key={user.id} className="w-full md:w-1/2 lg:w-1/3 p-2">
-            <Video 
-              stream={remoteStream} 
-              username={user.username} 
-              isActive={activeUserId === user.id}
-            />
-          </div>
-        );
-      } else {
-        console.warn(`No stream found for user ${user.username} (${user.id})`);
-      }
-      
-      // If user is screen sharing, show their screen too
-      if (user.isScreenSharing && peer && peer.screenStream) {
-        videos.push(
-          <div key={`${user.id}-screen`} className="w-full md:w-1/2 lg:w-2/3 p-2">
-            <Video 
-              stream={peer.screenStream} 
-              username={`${user.username}'s Screen`} 
-              isScreenShare={true}
-            />
-          </div>
-        );
+      if (user) {
+        // Use remoteStream from peer object or from user object
+        const remoteStream = (peer && peer.remoteStream) || user.stream;
+        
+        if (remoteStream) {
+          videos.push(
+            <div key={peerId} className="w-full md:w-1/2 lg:w-1/3 p-2">
+              <Video 
+                stream={remoteStream} 
+                username={user.username} 
+                isActive={activeUserId === peerId}
+              />
+            </div>
+          );
+        } else {
+          console.log('No stream available for user:', user.username);
+        }
+        
+        // If user is screen sharing, add their screen
+        if (user.isScreenSharing) {
+          videos.push(
+            <div key={`${peerId}-screen`} className="w-full md:w-1/2 lg:w-2/3 p-2">
+              <Video 
+                stream={user.screenStream} 
+                username={`${user.username}'s Screen`}
+                isScreenShare={true}
+              />
+            </div>
+          );
+        }
       }
     });
     
