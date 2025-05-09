@@ -69,7 +69,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          webrtc: ['simple-peer', 'socket.io-client'],
+          webrtc: ['socket.io-client'],
         },
       },
     },
