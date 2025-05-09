@@ -2,6 +2,28 @@ import Peer from 'simple-peer';
 import { socket, sendSignal } from './socket';
 import useStore from '../store/useStore';
 
+// Polyfill for secure random number generation
+// This helps with the "Secure random number generation is not supported" error
+const secureRandomPolyfill = () => {
+  if (typeof window !== 'undefined' && !window.crypto && window.msCrypto) {
+    // For IE 11
+    window.crypto = window.msCrypto;
+  }
+  
+  if (typeof window !== 'undefined' && window.crypto && !window.crypto.getRandomValues) {
+    // Fallback implementation
+    window.crypto.getRandomValues = function(array) {
+      for (let i = 0; i < array.length; i++) {
+        array[i] = Math.floor(Math.random() * 256);
+      }
+      return array;
+    };
+  }
+};
+
+// Apply the polyfill
+secureRandomPolyfill();
+
 // Initialize the user's media stream (audio and video)
 export const initUserMedia = async () => {
   try {
@@ -72,6 +94,11 @@ export const stopScreenShare = () => {
 export const createPeer = (userId, stream) => {
   try {
     console.log('Creating peer connection as initiator for:', userId);
+    
+    // Apply polyfill again just to be safe
+    secureRandomPolyfill();
+    
+    // Create peer with more browser-compatible options
     const peer = new Peer({ 
       initiator: true, 
       trickle: false,
@@ -79,8 +106,17 @@ export const createPeer = (userId, stream) => {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
+          { urls: 'stun:global.stun.twilio.com:3478' },
+          {
+            urls: 'turn:numb.viagenie.ca',
+            username: 'webrtc@live.com',
+            credential: 'muazkh'
+          }
         ]
+      },
+      sdpTransform: (sdp) => {
+        // Force to use Plan B semantics
+        return sdp.replace('a=group:BUNDLE 0 1', 'a=group:BUNDLE audio video');
       }
     });
 
@@ -121,6 +157,11 @@ export const createPeer = (userId, stream) => {
 export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
   try {
     console.log('Creating peer connection as receiver for:', userId);
+    
+    // Apply polyfill again just to be safe
+    secureRandomPolyfill();
+    
+    // Create peer with more browser-compatible options
     const peer = new Peer({ 
       initiator: false, 
       trickle: false,
@@ -128,8 +169,17 @@ export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
+          { urls: 'stun:global.stun.twilio.com:3478' },
+          {
+            urls: 'turn:numb.viagenie.ca',
+            username: 'webrtc@live.com',
+            credential: 'muazkh'
+          }
         ]
+      },
+      sdpTransform: (sdp) => {
+        // Force to use Plan B semantics
+        return sdp.replace('a=group:BUNDLE 0 1', 'a=group:BUNDLE audio video');
       }
     });
 
