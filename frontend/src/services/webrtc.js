@@ -1,7 +1,7 @@
 // Import the crypto polyfill first
 import './cryptoPolyfill';
-// Import our custom peer implementation instead of simple-peer directly
-import CustomPeer from './customPeer';
+// Import our basic WebRTC implementation
+import BasicPeer from './basicWebRTC';
 import { socket, sendSignal } from './socket';
 import useStore from '../store/useStore';
 
@@ -101,7 +101,6 @@ export const createPeer = (userId, stream) => {
     // Create peer with more browser-compatible options
     const peerOptions = { 
       initiator: true, 
-      trickle: false,
       stream,
       config: {
         iceServers: [
@@ -116,9 +115,9 @@ export const createPeer = (userId, stream) => {
       }
     };
     
-    // Use our custom peer implementation
-    console.log('Using CustomPeer implementation');
-    const peer = new CustomPeer(peerOptions);
+    // Use our basic WebRTC implementation
+    console.log('Using BasicPeer implementation');
+    const peer = new BasicPeer(peerOptions);
     
     peer.on('signal', signal => {
       console.log('Generated signal for peer:', userId);
@@ -161,7 +160,6 @@ export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
     // Create peer with more browser-compatible options
     const peerOptions = { 
       initiator: false, 
-      trickle: false,
       stream,
       config: {
         iceServers: [
@@ -176,9 +174,9 @@ export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
       }
     };
     
-    // Use our custom peer implementation
-    console.log('Using CustomPeer implementation');
-    const peer = new CustomPeer(peerOptions);
+    // Use our basic WebRTC implementation
+    console.log('Using BasicPeer implementation');
+    const peer = new BasicPeer(peerOptions);
 
     peer.on('signal', signal => {
       console.log('Generated signal for peer:', userId);
