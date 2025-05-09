@@ -94,6 +94,9 @@ export const createPeer = (userId, stream) => {
     peer.on('signal', (signal) => sendSignal({ to: userId, signal }));
     peer.on('error', (err) => console.error(`[createPeer] Peer error for ${userId}:`, err));
     peer.on('connect', () => console.log(`[createPeer] Connected to ${userId}`));
+    peer.on('stream', (remoteStream) => {
+      console.log(`[createPeer] Received stream from ${userId}:`, remoteStream);
+    });
     return peer;
   } catch (err) {
     console.error(`[createPeer] EXCEPTION during Peer creation for ${userId}:`, err);
@@ -114,6 +117,9 @@ export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
     peer.signal(incomingSignal);
     peer.on('error', (err) => console.error(`[acceptPeerSignalAndCreate] Peer error for ${userId}:`, err));
     peer.on('connect', () => console.log(`[acceptPeerSignalAndCreate] Connected with ${userId}`));
+    peer.on('stream', (remoteStream) => {
+      console.log(`[acceptPeerSignalAndCreate] Received stream from ${userId}:`, remoteStream);
+    });
     return peer;
   } catch (err) {
     console.error(`[acceptPeerSignalAndCreate] EXCEPTION during Peer creation/signaling for ${userId}:`, err);
