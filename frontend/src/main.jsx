@@ -1,5 +1,9 @@
-import './services/cryptoPolyfill'
-import './polyfills'
+// Import randombytes replacement first
+import './services/randombytes';
+// Then the crypto polyfill
+import './services/cryptoPolyfill';
+// Then other polyfills
+import './polyfills';
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'

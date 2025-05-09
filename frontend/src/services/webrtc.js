@@ -1,6 +1,7 @@
 // Import the crypto polyfill first
 import './cryptoPolyfill';
-import Peer from 'simple-peer';
+// Import our custom peer implementation instead of simple-peer directly
+import CustomPeer from './customPeer';
 import { socket, sendSignal } from './socket';
 import useStore from '../store/useStore';
 
@@ -97,9 +98,6 @@ export const createPeer = (userId, stream) => {
   try {
     console.log('Creating peer connection as initiator for:', userId);
     
-    // Apply polyfill again just to be safe
-    secureRandomPolyfill();
-    
     // Create peer with more browser-compatible options
     const peerOptions = { 
       initiator: true, 
@@ -118,63 +116,39 @@ export const createPeer = (userId, stream) => {
       }
     };
     
-    // Try to create the peer with error handling
-    try {
-      console.log('Attempting to create peer with options:', peerOptions);
-      const peer = new Peer(peerOptions);
+    // Use our custom peer implementation
+    console.log('Using CustomPeer implementation');
+    const peer = new CustomPeer(peerOptions);
+    
+    peer.on('signal', signal => {
+      console.log('Generated signal for peer:', userId);
+      sendSignal({ to: userId, signal });
+    });
+
+    peer.on('connect', () => {
+      console.log('Peer connection established with:', userId);
+    });
+
+    peer.on('stream', remoteStream => {
+      console.log('Received stream from peer:', userId);
+      // Store the remote stream in the peer object
+      peer.remoteStream = remoteStream;
       
-      peer.on('signal', signal => {
-        console.log('Generated signal for peer:', userId);
-        sendSignal({ to: userId, signal });
-      });
-
-      peer.on('connect', () => {
-        console.log('Peer connection established with:', userId);
-      });
-
-      peer.on('stream', remoteStream => {
-        console.log('Received stream from peer:', userId);
-        // Store the remote stream in the peer object
-        peer.remoteStream = remoteStream;
-        
-        // Update the user in the store with the stream
-        const { users, updateUserStream } = useStore.getState();
-        const user = users.find(u => u.id === userId);
-        if (user) {
-          updateUserStream(userId, remoteStream);
-        }
-      });
-
-      peer.on('error', err => {
-        console.error('Peer connection error:', err);
-      });
-
-      return peer;
-    } catch (err) {
-      console.error('Error creating peer with simple-peer:', err);
-      
-      // If we get the specific error about secure random number generation
-      if (err.message && err.message.includes('Secure random number generation')) {
-        console.warn('Using fallback for WebRTC connection');
-        
-        // Create a simple data channel connection without using WebCrypto
-        const dummyPeer = {
-          remoteStream: null,
-          signal: () => {},
-          on: (event, callback) => {
-            console.log(`Registered dummy handler for ${event}`);
-            return dummyPeer;
-          },
-          destroy: () => {}
-        };
-        
-        return dummyPeer;
+      // Update the user in the store with the stream
+      const { users, updateUserStream } = useStore.getState();
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        updateUserStream(userId, remoteStream);
       }
-      
-      return null;
-    }
+    });
+
+    peer.on('error', err => {
+      console.error('Peer connection error:', err);
+    });
+
+    return peer;
   } catch (err) {
-    console.error('Error in createPeer outer try/catch:', err);
+    console.error('Error in createPeer:', err);
     return null;
   }
 };
@@ -183,9 +157,6 @@ export const createPeer = (userId, stream) => {
 export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
   try {
     console.log('Creating peer connection as receiver for:', userId);
-    
-    // Apply polyfill again just to be safe
-    secureRandomPolyfill();
     
     // Create peer with more browser-compatible options
     const peerOptions = { 
@@ -205,65 +176,42 @@ export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
       }
     };
     
-    try {
-      console.log('Attempting to create peer with options:', peerOptions);
-      const peer = new Peer(peerOptions);
+    // Use our custom peer implementation
+    console.log('Using CustomPeer implementation');
+    const peer = new CustomPeer(peerOptions);
 
-      peer.on('signal', signal => {
-        console.log('Generated signal for peer:', userId);
-        sendSignal({ to: userId, signal });
-      });
+    peer.on('signal', signal => {
+      console.log('Generated signal for peer:', userId);
+      sendSignal({ to: userId, signal });
+    });
 
-      peer.on('connect', () => {
-        console.log('Peer connection established with:', userId);
-      });
+    peer.on('connect', () => {
+      console.log('Peer connection established with:', userId);
+    });
 
-      peer.on('stream', remoteStream => {
-        console.log('Received stream from peer:', userId);
-        // Store the remote stream in the peer object
-        peer.remoteStream = remoteStream;
-        
-        // Update the user in the store with the stream
-        const { users, updateUserStream } = useStore.getState();
-        const user = users.find(u => u.id === userId);
-        if (user) {
-          updateUserStream(userId, remoteStream);
-        }
-      });
-
-      peer.on('error', err => {
-        console.error('Peer connection error:', err);
-      });
-
-      // Accept the incoming signal
-      peer.signal(incomingSignal);
-
-      return peer;
-    } catch (err) {
-      console.error('Error creating peer with simple-peer:', err);
+    peer.on('stream', remoteStream => {
+      console.log('Received stream from peer:', userId);
+      // Store the remote stream in the peer object
+      peer.remoteStream = remoteStream;
       
-      // If we get the specific error about secure random number generation
-      if (err.message && err.message.includes('Secure random number generation')) {
-        console.warn('Using fallback for WebRTC connection');
-        
-        // Create a simple data channel connection without using WebCrypto
-        const dummyPeer = {
-          remoteStream: null,
-          signal: () => {},
-          on: (event, callback) => {
-            console.log(`Registered dummy handler for ${event}`);
-            return dummyPeer;
-          },
-          destroy: () => {}
-        };
-        
-        return dummyPeer;
+      // Update the user in the store with the stream
+      const { users, updateUserStream } = useStore.getState();
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        updateUserStream(userId, remoteStream);
       }
-      
-      return null;
-    }
+    });
+
+    peer.on('error', err => {
+      console.error('Peer connection error:', err);
+    });
+
+    // Accept the incoming signal
+    peer.signal(incomingSignal);
+
+    return peer;
   } catch (err) {
-    console.error('Error in acceptPeerSignalAndCreate outer try/catch:', err);
+    console.error('Error in acceptPeerSignalAndCreate:', err);
     return null;
   }
 };
