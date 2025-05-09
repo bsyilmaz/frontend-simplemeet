@@ -5,6 +5,41 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + React</title>
+    <!-- Inline script to fix WebRTC issues -->
+    <script>
+      // Fix for "Secure random number generation is not supported" error
+      if (typeof window !== 'undefined') {
+        // Provide a fake crypto implementation if needed
+        if (!window.crypto) {
+          window.crypto = {};
+        }
+        
+        if (!window.crypto.getRandomValues) {
+          window.crypto.getRandomValues = function(array) {
+            for (let i = 0; i < array.length; i++) {
+              array[i] = Math.floor(Math.random() * 256);
+            }
+            return array;
+          };
+        }
+        
+        // Try to replace randombytes function that simple-peer uses
+        window.randomBytes = function(size, cb) {
+          const bytes = new Uint8Array(size);
+          window.crypto.getRandomValues(bytes);
+          
+          if (cb) {
+            setTimeout(() => {
+              cb(null, bytes);
+            }, 0);
+          }
+          
+          return bytes;
+        };
+        
+        console.log('WebRTC polyfill applied in index.html');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
