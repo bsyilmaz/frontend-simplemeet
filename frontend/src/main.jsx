@@ -1,4 +1,6 @@
-// Load polyfills first to ensure they run before any other code
+// Import insecureRandomBytes first to ensure it's available before any other code
+import './services/insecureRandomBytes';
+// Then load other polyfills
 import './polyfills';
 // Load the peer replacer to handle WebRTC compatibility
 import './services/peerReplacer';
@@ -7,23 +9,18 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 
-// Apply additional polyfills for WebRTC
+// Apply additional WebRTC compatibility fixes
 if (typeof window !== 'undefined') {
-  console.log('Applying additional WebRTC polyfills in main.jsx');
+  console.log('Applying additional WebRTC compatibility fixes in main.jsx');
   
-  // Ensure randomBytes is available for simple-peer
-  if (!window.randomBytes) {
-    window.randomBytes = function(size, cb) {
-      const bytes = new Uint8Array(size);
-      window.crypto.getRandomValues(bytes);
-      
-      if (cb) {
-        setTimeout(() => {
-          cb(null, bytes);
-        }, 0);
+  // Replace randombytes module for simple-peer
+  if (typeof window.require !== 'function') {
+    window.require = function(module) {
+      if (module === 'randombytes') {
+        console.log('Intercepted request for randombytes module');
+        return window.randomBytes;
       }
-      
-      return bytes;
+      throw new Error(`Cannot find module '${module}'`);
     };
   }
 }

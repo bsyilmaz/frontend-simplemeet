@@ -49,6 +49,7 @@ export default defineConfig({
       util: 'util',
       buffer: 'buffer',
       events: 'events',
+      'randombytes': resolve(__dirname, 'src/services/insecureRandomBytes.js')
     }
   },
   define: {
