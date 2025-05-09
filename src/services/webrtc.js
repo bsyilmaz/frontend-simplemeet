@@ -91,7 +91,7 @@ export const createPeer = (userId, stream) => {
   }
   try {
     const peer = new Peer({ initiator: true, trickle: false, stream });
-    peer.on('signal', (signal) => sendSignal(userId, signal));
+    peer.on('signal', (signal) => sendSignal({ to: userId, signal }));
     peer.on('error', (err) => console.error(`[createPeer] Peer error for ${userId}:`, err));
     peer.on('connect', () => console.log(`[createPeer] Connected to ${userId}`));
     return peer;
@@ -110,7 +110,7 @@ export const acceptPeerSignalAndCreate = (incomingSignal, userId, stream) => {
   }
   try {
     const peer = new Peer({ initiator: false, trickle: false, stream });
-    peer.on('signal', (signalData) => sendSignal(userId, signalData));
+    peer.on('signal', (signal) => sendSignal({ to: userId, signal }));
     peer.signal(incomingSignal);
     peer.on('error', (err) => console.error(`[acceptPeerSignalAndCreate] Peer error for ${userId}:`, err));
     peer.on('connect', () => console.log(`[acceptPeerSignalAndCreate] Connected with ${userId}`));

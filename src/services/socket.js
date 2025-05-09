@@ -29,8 +29,12 @@ export const joinRoom = (roomId, username, password = '') => {
   socket.emit('join-room', { roomId, username, password });
 };
 
-export const sendSignal = (to, signal) => {
-  socket.emit('send-signal', { to, signal });
+export const sendSignal = (data) => {
+  if (typeof data === 'object' && data.to && data.signal) {
+    socket.emit('send-signal', data);
+  } else {
+    console.error('Invalid signal data format:', data);
+  }
 };
 
 export const notifyScreenShareStarted = () => {
