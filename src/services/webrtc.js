@@ -5,16 +5,67 @@ import useStore from '../store/useStore';
 // Initialize the user's media stream (audio and video)
 export const initUserMedia = async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
+    // First try to check if the browser supports getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('Browser API navigator.mediaDevices.getUserMedia not available');
+      alert('Bu tarayıcı kamera/mikrofon erişimini desteklemiyor. Başka bir tarayıcı deneyin.');
+      return null;
+    }
     
-    const { setLocalStream } = useStore.getState();
-    setLocalStream(stream);
-    return stream;
+    // List available devices for debugging
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      const audioDevices = devices.filter(device => device.kind === 'audioinput');
+      
+      console.log('Available video devices:', videoDevices);
+      console.log('Available audio devices:', audioDevices);
+      
+      // If no devices found, alert user
+      if (videoDevices.length === 0) {
+        console.warn('No video devices found');
+      }
+      if (audioDevices.length === 0) {
+        console.warn('No audio devices found');
+      }
+    } catch (e) {
+      console.error('Failed to enumerate devices:', e);
+    }
+    
+    // Try to get media with both audio and video
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      
+      const { setLocalStream } = useStore.getState();
+      setLocalStream(stream);
+      return stream;
+    } catch (e) {
+      console.error('Error getting both audio and video:', e);
+      
+      // If it fails, try only audio
+      try {
+        console.log('Trying with audio only...');
+        const audioOnlyStream = await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: true,
+        });
+        
+        alert('Kamera erişimi başarısız, sadece ses ile devam ediliyor.');
+        const { setLocalStream } = useStore.getState();
+        setLocalStream(audioOnlyStream);
+        return audioOnlyStream;
+      } catch (audioErr) {
+        console.error('Audio only also failed:', audioErr);
+        alert('Kamera ve mikrofon erişimi engellendi. Lütfen tarayıcı izinlerinizi kontrol edin ve sayfayı yenileyin.');
+        return null;
+      }
+    }
   } catch (error) {
     console.error('Error accessing media devices:', error);
+    alert('Kamera ve mikrofon erişimi başarısız oldu: ' + error.message);
     return null;
   }
 };
